@@ -6,7 +6,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class CatalogService {
   constructor(private prisma: PrismaService) {}
 
-  getCatalog() {
-    return this.prisma.product.findMany();
+  async getCatalog() {
+    return await this.prisma.product.findMany();
   }
 }

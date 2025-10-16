@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 
 import { CatalogController } from './catalog.controller';
 import { CatalogService } from './catalog.service';
+import { PrismaModule } from 'src/prisma/prisma.module';
 
 describe('CatalogController', () => {
   let controller: CatalogController;
@@ -10,6 +11,7 @@ describe('CatalogController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CatalogController],
       providers: [CatalogService],
+      imports: [PrismaModule],
     }).compile();
 
     controller = module.get<CatalogController>(CatalogController);
@@ -21,6 +23,6 @@ describe('CatalogController', () => {
 
   it('should return catalog items', async () => {
     const catalog = await controller.getCatalog();
-    expect(catalog).toHaveLength(30);
+    expect(catalog).toHaveLength(36);
   });
 });
