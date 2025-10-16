@@ -19,7 +19,8 @@ describe('CatalogController', () => {
     expect(controller).toBeDefined();
   });
 
-  it('should return catalog items', () => {
-    expect(controller.getCatalog()).toEqual(['item']);
+  it('should return catalog items', async () => {
+    const catalog = await controller.getCatalog();
+    expect(catalog).toHaveLength(30);
   });
 });
