@@ -57,6 +57,14 @@ async function main() {
     ],
   });
 
+  await prisma.user.create({
+    data: {
+      email: 'user@example.com',
+      password: 'password',
+      name: 'User Name',
+    },
+  });
+
   console.log('Seed completed successfully!');
 }
 

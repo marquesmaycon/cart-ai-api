@@ -13,6 +13,8 @@ model Store {
   name     String
   products Product[]
 
+  carts Cart[]
+
   @@map("stores")
 }
 
@@ -25,5 +27,48 @@ model Product {
   storeId Int   @map("store_id")
   store   Store @relation(fields: [storeId], references: [id])
 
+  cartItems CartItem[]
+
   @@map("products")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  carts Cart[]
+
+  @@map("users")
+}
+
+model Cart {
+  id        Int      @id @default(autoincrement())
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  userId  Int   @map("user_id")
+  user    User  @relation(fields: [userId], references: [id])
+  storeId Int   @map("store_id")
+  store   Store @relation(fields: [storeId], references: [id])
+
+  items CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id        Int      @id @default(autoincrement())
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  cartId    Int     @map("cart_id")
+  cart      Cart    @relation(fields: [cartId], references: [id])
+  productId Int     @map("product_id")
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@map("cart_items")
+  @@unique([cartId, productId])
 }
