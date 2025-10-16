@@ -6,7 +6,17 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class CatalogService {
   constructor(private prisma: PrismaService) {}
 
-  async getCatalog() {
-    return await this.prisma.product.findMany();
+  async getCatalog(search?: string) {
+    return await this.prisma.product.findMany({
+      include: {
+        store: true,
+      },
+      where: {
+        name: {
+          contains: search,
+          mode: 'insensitive',
+        },
+      },
+    });
   }
 }

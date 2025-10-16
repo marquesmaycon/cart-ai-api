@@ -21,8 +21,18 @@ describe('CatalogController', () => {
     expect(controller).toBeDefined();
   });
 
-  it('should return catalog items', async () => {
+  it('should return all products', async () => {
     const catalog = await controller.getCatalog();
     expect(catalog).toHaveLength(36);
+    expect(catalog[0]).toHaveProperty('store');
+  });
+
+  it('should return products for a search query', async () => {
+    const searchTerm = 'Feijão';
+    const catalog = await controller.getCatalog(searchTerm);
+
+    catalog.forEach((item) => {
+      expect(item.name).toMatch(new RegExp(searchTerm, 'i'));
+    });
   });
 });
