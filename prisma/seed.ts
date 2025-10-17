@@ -1,17 +1,17 @@
-import { PrismaClient } from '../generated/prisma';
+import { PrismaClient } from '../generated/prisma'
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient()
 
 async function main() {
-  console.log('Starting seed...');
+  console.log('Starting seed...')
 
   await prisma.store.createMany({
     data: [
       { name: 'Supermercado Central' },
       { name: 'Mercado Econômico' },
-      { name: 'SuperShop Express' },
-    ],
-  });
+      { name: 'SuperShop Express' }
+    ]
+  })
 
   await prisma.product.createMany({
     data: [
@@ -53,26 +53,33 @@ async function main() {
       { name: 'Ovos - dúzia', price: 1020, storeId: 3 },
       { name: 'Açúcar refinado - 1kg', price: 569, storeId: 3 },
       { name: 'Chocolate em pó - 200g', price: 699, storeId: 3 },
-      { name: 'Fermento químico - 100g', price: 319, storeId: 3 },
-    ],
-  });
+      { name: 'Fermento químico - 100g', price: 319, storeId: 3 }
+    ]
+  })
 
-  await prisma.user.create({
-    data: {
-      email: 'user@example.com',
-      password: 'password',
-      name: 'User Name',
-    },
-  });
+  await prisma.user.createMany({
+    data: [
+      {
+        email: 'maycon@example.com',
+        password: 'password',
+        name: 'Maycon Marques'
+      },
+      {
+        email: 'user@example.com',
+        password: 'password',
+        name: 'User Name'
+      }
+    ]
+  })
 
-  console.log('Seed completed successfully!');
+  console.log('Seed completed successfully!')
 }
 
 main()
   .catch((e) => {
-    console.error('Error during seed:', e);
-    process.exit(1);
+    console.error('Error during seed:', e)
+    process.exit(1)
   })
   .finally(async () => {
-    await prisma.$disconnect();
-  });
+    await prisma.$disconnect()
+  })
