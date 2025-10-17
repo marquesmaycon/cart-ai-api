@@ -109,7 +109,7 @@ describe('CartController', () => {
     expect(cart).toHaveProperty('id')
     expect(cart?.items.length).toBe(newCart2?.items.length)
     expect(cart?.items[0].quantity).toBe(newCart2?.items[0].quantity)
-    expect(cart?.items[0].productId).toBe(newCart2?.items[0].product.id)
+    expect(cart?.items[0].product.id).toBe(newCart2?.items[0].product.id)
   })
 
   it('should update cart item quantity', async () => {
@@ -129,5 +129,24 @@ describe('CartController', () => {
     expect(cart).toHaveProperty('id')
     expect(cart?.items[0].quantity).toBe(5)
     expect(cart?.items[0].product.id).toBe(1)
+  })
+
+  it('should remove a item from the cart when quantity is 0', async () => {
+    const payload: CreateCartDto = {
+      userId: 1,
+      productId: 1,
+      quantity: 3
+    }
+
+    await controller.create(payload)
+
+    const payload2: UpdateCartDto = { ...payload, quantity: 0 }
+
+    const cart = await controller.update(String(payload.userId), payload2)
+
+    console.log(cart)
+
+    expect(cart).toHaveProperty('id')
+    expect(cart?.items.length).toBe(0)
   })
 })

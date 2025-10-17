@@ -16,17 +16,29 @@ export class CartService {
     })
 
     const existingCart = await this.prisma.cart.findFirst({
-      where: { userId, active: true }
+      where: { userId, active: true },
+      include: { items: { select: { productId: true, quantity: true } } }
     })
 
     if (existingCart?.storeId === product.storeId) {
-      await this.prisma.cartItem.create({
-        data: {
-          cartId: existingCart.id,
-          productId,
-          quantity
-        }
-      })
+      if (existingCart.items.some((item) => item.productId === productId)) {
+        await this.prisma.cartItem.update({
+          where: {
+            cartId_productId: { cartId: existingCart.id, productId }
+          },
+          data: {
+            quantity: { increment: quantity }
+          }
+        })
+      } else {
+        await this.prisma.cartItem.create({
+          data: {
+            cartId: existingCart.id,
+            productId,
+            quantity
+          }
+        })
+      }
     } else {
       await this.prisma.cart.create({
         data: {
@@ -44,19 +56,7 @@ export class CartService {
       }
     }
 
-    const cart = await this.prisma.cart.findFirst({
-      where: { userId, active: true },
-      include: {
-        items: {
-          select: {
-            quantity: true,
-            product: { select: { id: true, name: true, price: true } }
-          }
-        }
-      }
-    })
-
-    return cart
+    return await this.findOne(userId)
   }
 
   findAll() {
@@ -64,9 +64,17 @@ export class CartService {
   }
 
   async findOne(userId: number) {
-    return await this.prisma.cart.findFirst({
+    return await this.prisma.cart.findFirstOrThrow({
       where: { active: true, userId },
-      include: { items: true }
+      include: {
+        store: true,
+        items: {
+          select: {
+            quantity: true,
+            product: { select: { id: true, name: true, price: true } }
+          }
+        }
+      }
     })
   }
 
@@ -82,22 +90,30 @@ export class CartService {
       throw new Error('Product not found in cart')
     }
 
-    await this.prisma.cartItem.update({
-      where: {
-        cartId_productId: { cartId: activeCart.id, productId }
-      },
-      data: { quantity },
-      include: { product: true }
-    })
+    if (quantity <= 0) {
+      await this.prisma.cartItem.delete({
+        where: {
+          cartId_productId: { cartId: activeCart.id, productId }
+        }
+      })
+    } else {
+      await this.prisma.cartItem.update({
+        where: {
+          cartId_productId: { cartId: activeCart.id, productId }
+        },
+        data: { quantity },
+        include: { product: true }
+      })
+    }
 
     return await this.prisma.cart.findFirstOrThrow({
       where: { id: activeCart.id },
       include: {
+        store: true,
         items: {
           select: {
-            productId: true,
             quantity: true,
-            product: { select: { id: true } }
+            product: { select: { id: true, name: true, price: true } }
           }
         }
       }
