@@ -5,6 +5,8 @@ import { PrismaModule } from 'src/prisma/prisma.module'
 import { PrismaService } from 'src/prisma/prisma.service'
 import { ChatSessionService } from './chat-session.service'
 import { ChatSessionController } from './chat-session.controller'
+import { LlmService } from 'src/llm/llm.service'
+import { ConfigService } from '@nestjs/config'
 
 describe('ChatSessionController', () => {
   let controller: ChatSessionController
@@ -13,7 +15,7 @@ describe('ChatSessionController', () => {
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ChatSessionController],
-      providers: [ChatSessionService],
+      providers: [ChatSessionService, LlmService, ConfigService],
       imports: [PrismaModule]
     }).compile()
 
@@ -43,7 +45,7 @@ describe('ChatSessionController', () => {
     expect(chatSession).toHaveProperty('id')
     expect(chatSession).toHaveProperty('userId', userId)
 
-    const messageContent = 'Hello, this is a user message.'
+    const messageContent = 'Quero fazer um bolo de chocolate.'
     const updatedChatSession = await controller.addUserMessage(
       chatSession.id.toString(),
       messageContent

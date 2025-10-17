@@ -9,7 +9,8 @@ import { CatalogModule } from './catalog/catalog.module'
 import { PrismaService } from './prisma/prisma.service'
 import { PrismaModule } from './prisma/prisma.module'
 import { CartModule } from './cart/cart.module'
-import { ChatSessionModule } from './chat-session/chat-session.module';
+import { ChatSessionModule } from './chat-session/chat-session.module'
+import { LlmService } from './llm/llm.service'
 
 @Module({
   imports: [
@@ -20,6 +21,6 @@ import { ChatSessionModule } from './chat-session/chat-session.module';
     ChatSessionModule
   ],
   controllers: [AppController, CatalogController],
-  providers: [AppService, CatalogService, PrismaService]
+  providers: [AppService, CatalogService, PrismaService, LlmService]
 })
 export class AppModule {}
