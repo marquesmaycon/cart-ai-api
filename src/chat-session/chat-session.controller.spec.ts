@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing'
 
-import { ChatSessionController } from './chat-session.controller'
-import { ChatSessionService } from './chat-session.service'
+import { MessageSender, MessageType, type ChatMessage } from 'generated/prisma'
 import { PrismaModule } from 'src/prisma/prisma.module'
 import { PrismaService } from 'src/prisma/prisma.service'
-import { MessageSender, MessageType } from 'generated/prisma'
+import { ChatSessionService } from './chat-session.service'
+import { ChatSessionController } from './chat-session.controller'
 
 describe('ChatSessionController', () => {
   let controller: ChatSessionController
@@ -44,19 +44,21 @@ describe('ChatSessionController', () => {
     expect(chatSession).toHaveProperty('userId', userId)
 
     const messageContent = 'Hello, this is a user message.'
-    const message = await controller.addUserMessage(
+    const updatedChatSession = await controller.addUserMessage(
       chatSession.id.toString(),
       messageContent
     )
 
-    expect(message).toEqual(
-      expect.objectContaining({
-        chatSessionId: chatSession.id,
-        content: messageContent,
-        sender: MessageSender.USER,
-        messageType: MessageType.TEXT,
-        geminiMessageId: null
-      })
+    expect(updatedChatSession?.messages).toEqual(
+      expect.arrayContaining<Partial<ChatMessage>>([
+        expect.objectContaining({
+          chatSessionId: chatSession.id,
+          content: messageContent,
+          sender: MessageSender.USER,
+          messageType: MessageType.TEXT,
+          geminiMessageId: null
+        })
+      ])
     )
   })
 })

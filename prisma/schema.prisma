@@ -96,15 +96,35 @@ enum MessageType {
 }
 
 model ChatMessage {
-  id              Int            @id @default(autoincrement())
+  id              Int           @id @default(autoincrement())
   content         String
   sender          MessageSender @default(USER)
-  geminiMessageId String?        @unique @map("gemini_message_id")
+  geminiMessageId String?       @unique @map("gemini_message_id")
   messageType     MessageType   @default(TEXT) @map("message_type")
-  createdAt       DateTime       @default(now()) @map("created_at")
+  createdAt       DateTime      @default(now()) @map("created_at")
 
-  chatSessionId Int         @map("chat_session_id")
-  chatSession   ChatSession @relation(fields: [chatSessionId], references: [id], onDelete: Cascade)
+  chatSessionId Int                 @map("chat_session_id")
+  chatSession   ChatSession         @relation(fields: [chatSessionId], references: [id], onDelete: Cascade)
+  actions       ChatMessageAction[]
 
   @@map("chat_messages")
+}
+
+enum ActionType {
+  SUGGEST_CART
+}
+
+model ChatMessageAction {
+  id          Int        @id @default(autoincrement())
+  actionType  ActionType @map("action_type")
+  payload     Json
+  createdAt   DateTime   @default(now()) @map("created_at")
+  confirmedAt DateTime?  @map("confirmed_at")
+  executedAt  DateTime?  @map("executed_at")
+
+  chatMessageId Int         @map("chat_message_id")
+  chatMessage   ChatMessage @relation(fields: [chatMessageId], references: [id], onDelete: Cascade)
+
+  @@unique([chatMessageId, actionType])
+  @@map("chat_message_actions")
 }

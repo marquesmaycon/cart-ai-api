@@ -21,12 +21,14 @@ export class ChatSessionService {
 
   async findOne(id: number) {
     return await this.prisma.chatSession.findUnique({
-      where: { id }
+      where: { id },
+      include: { messages: true }
     })
   }
 
   async addUserMessage(sessionId: number, content: string) {
-    return this.addMessageToSession({ chatSessionId: sessionId, content })
+    await this.addMessageToSession({ chatSessionId: sessionId, content })
+    return await this.findOne(sessionId)
   }
 
   private async addMessageToSession(
