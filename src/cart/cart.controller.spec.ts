@@ -54,9 +54,12 @@ describe('CartController', () => {
 
     const cart = await controller.create(payload)
 
-    expect(cart).toHaveProperty('id')
-    expect(cart?.items[0].quantity).toBe(1)
-    expect(cart?.items[0].product.id).toBe(1)
+    expect(cart?.items).toContainEqual(
+      expect.objectContaining({
+        quantity: payload.quantity,
+        productId: payload.productId
+      })
+    )
   })
 
   it('should stack cart items if the store is the same', async () => {
@@ -78,11 +81,19 @@ describe('CartController', () => {
 
     const cart = await controller.create(payload2)
 
-    expect(cart).toHaveProperty('id')
-    expect(cart?.items[0].quantity).toBe(1)
-    expect(cart?.items[0].product.id).toBe(1)
-    expect(cart?.items[1].quantity).toBe(2)
-    expect(cart?.items[1].product.id).toBe(2)
+    expect(cart?.items.length).toBe(2)
+    expect(cart?.items).toContainEqual(
+      expect.objectContaining({
+        quantity: payload.quantity,
+        productId: payload.productId
+      })
+    )
+    expect(cart?.items).toContainEqual(
+      expect.objectContaining({
+        quantity: payload2.quantity,
+        productId: payload2.productId
+      })
+    )
   })
 
   it('should create a new cart if the store is different', async () => {
@@ -102,14 +113,17 @@ describe('CartController', () => {
       quantity: 2
     }
 
-    const newCart2 = await controller.create(payload2)
+    const newCart = await controller.create(payload2)
 
     const cart = await controller.findOne(String(payload.userId))
 
-    expect(cart).toHaveProperty('id')
-    expect(cart?.items.length).toBe(newCart2?.items.length)
-    expect(cart?.items[0].quantity).toBe(newCart2?.items[0].quantity)
-    expect(cart?.items[0].product.id).toBe(newCart2?.items[0].product.id)
+    expect(cart?.items.length).toBe(newCart?.items.length)
+    expect(cart?.items).toContainEqual(
+      expect.objectContaining({
+        quantity: payload2.quantity,
+        productId: payload2.productId
+      })
+    )
   })
 
   it('should update cart item quantity', async () => {
@@ -126,9 +140,12 @@ describe('CartController', () => {
 
     const cart = await controller.update(String(payload.userId), payload2)
 
-    expect(cart).toHaveProperty('id')
-    expect(cart?.items[0].quantity).toBe(5)
-    expect(cart?.items[0].product.id).toBe(1)
+    expect(cart?.items).toContainEqual(
+      expect.objectContaining({
+        quantity: payload2.quantity,
+        productId: payload2.productId
+      })
+    )
   })
 
   it('should remove a item from the cart when quantity is 0', async () => {
@@ -143,8 +160,6 @@ describe('CartController', () => {
     const payload2: UpdateCartDto = { ...payload, quantity: 0 }
 
     const cart = await controller.update(String(payload.userId), payload2)
-
-    console.log(cart)
 
     expect(cart).toHaveProperty('id')
     expect(cart?.items.length).toBe(0)

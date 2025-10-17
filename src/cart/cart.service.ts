@@ -70,8 +70,9 @@ export class CartService {
         store: true,
         items: {
           select: {
+            productId: true,
             quantity: true,
-            product: { select: { id: true, name: true, price: true } }
+            product: { select: { name: true, price: true } }
           }
         }
       }
@@ -112,8 +113,9 @@ export class CartService {
         store: true,
         items: {
           select: {
+            productId: true,
             quantity: true,
-            product: { select: { id: true, name: true, price: true } }
+            product: { select: { name: true, price: true } }
           }
         }
       }
