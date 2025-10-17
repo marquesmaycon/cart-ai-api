@@ -39,7 +39,8 @@ model User {
   password  String
   createdAt DateTime @default(now()) @map("created_at")
 
-  carts Cart[]
+  carts        Cart[]
+  chatSessions ChatSession[]
 
   @@map("users")
 }
@@ -69,14 +70,41 @@ model CartItem {
   productId Int     @map("product_id")
   product   Product @relation(fields: [productId], references: [id])
 
-  @@map("cart_items")
   @@unique([cartId, productId])
+  @@map("cart_items")
 }
 
 model ChatSession {
   id        Int      @id @default(autoincrement())
-  userId    Int   @map("user_id")
+  userId    Int      @map("user_id")
   createdAt DateTime @default(now()) @map("created_at")
 
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages ChatMessage[]
+
   @@map("chat_sessions")
+}
+
+enum MessageSender {
+  USER
+  ASSISTANT
+}
+
+enum MessageType {
+  TEXT
+  SUGGESTION
+}
+
+model ChatMessage {
+  id              Int            @id @default(autoincrement())
+  content         String
+  sender          MessageSender @default(USER)
+  geminiMessageId String?        @unique @map("gemini_message_id")
+  messageType     MessageType   @default(TEXT) @map("message_type")
+  createdAt       DateTime       @default(now()) @map("created_at")
+
+  chatSessionId Int         @map("chat_session_id")
+  chatSession   ChatSession @relation(fields: [chatSessionId], references: [id], onDelete: Cascade)
+
+  @@map("chat_messages")
 }

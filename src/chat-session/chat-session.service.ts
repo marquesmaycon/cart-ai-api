@@ -3,19 +3,16 @@ import { Injectable } from '@nestjs/common'
 import { CreateChatSessionDto } from './dto/create-chat-session.dto'
 import { UpdateChatSessionDto } from './dto/update-chat-session.dto'
 import { PrismaService } from 'src/prisma/prisma.service'
+import type { CreateChatMessageDto } from './dto/create-chat-message.dto'
 
 @Injectable()
 export class ChatSessionService {
   constructor(private prisma: PrismaService) {}
 
   async create({ userId }: CreateChatSessionDto) {
-    const chat = await this.prisma.chatSession.create({
-      data: {
-        userId
-      }
+    return await this.prisma.chatSession.create({
+      data: { userId }
     })
-
-    return chat
   }
 
   findAll() {
@@ -26,6 +23,16 @@ export class ChatSessionService {
     return await this.prisma.chatSession.findUnique({
       where: { id }
     })
+  }
+
+  async addUserMessage(sessionId: number, content: string) {
+    return this.addMessageToSession({ chatSessionId: sessionId, content })
+  }
+
+  private async addMessageToSession(
+    createChatMessageDto: CreateChatMessageDto
+  ) {
+    return await this.prisma.chatMessage.create({ data: createChatMessageDto })
   }
 
   update(id: number, updateChatSessionDto: UpdateChatSessionDto) {

@@ -31,6 +31,14 @@ export class ChatSessionController {
     return this.chatSessionService.findOne(+id)
   }
 
+  @Post(':id/messages')
+  async addUserMessage(
+    @Param('id') id: string,
+    @Body('content') content: string
+  ) {
+    return await this.chatSessionService.addUserMessage(+id, content)
+  }
+
   @Patch(':id')
   update(
     @Param('id') id: string,
