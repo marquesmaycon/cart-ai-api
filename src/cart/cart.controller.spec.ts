@@ -9,6 +9,7 @@ import { PrismaModule } from 'src/prisma/prisma.module'
 import { PrismaService } from 'src/prisma/prisma.service'
 // import type { App } from 'supertest/types'
 import type { CreateCartDto } from './dto/create-cart.dto'
+import type { UpdateCartDto } from './dto/update-cart.dto'
 
 describe('CartController', () => {
   // let app: INestApplication<App>
@@ -109,5 +110,24 @@ describe('CartController', () => {
     expect(cart?.items.length).toBe(newCart2?.items.length)
     expect(cart?.items[0].quantity).toBe(newCart2?.items[0].quantity)
     expect(cart?.items[0].productId).toBe(newCart2?.items[0].product.id)
+  })
+
+  it('should update cart item quantity', async () => {
+    const payload: CreateCartDto = {
+      userId: 1,
+      productId: 1,
+      quantity: 1
+    }
+
+    await controller.create(payload)
+    await controller.findOne(String(payload.userId))
+
+    const payload2: UpdateCartDto = { ...payload, quantity: 5 }
+
+    const cart = await controller.update(String(payload.userId), payload2)
+
+    expect(cart).toHaveProperty('id')
+    expect(cart?.items[0].quantity).toBe(5)
+    expect(cart?.items[0].product.id).toBe(1)
   })
 })

@@ -70,8 +70,38 @@ export class CartService {
     })
   }
 
-  update(id: number, updateCartDto: UpdateCartDto) {
-    return `This action updates a #${id} cart`
+  async update(id: number, updateCartDto: UpdateCartDto) {
+    const { productId, quantity } = updateCartDto
+
+    const activeCart = await this.prisma.cart.findFirstOrThrow({
+      where: { userId: id, active: true },
+      include: { items: { select: { productId: true } } }
+    })
+
+    if (!activeCart.items.some((item) => item.productId === productId)) {
+      throw new Error('Product not found in cart')
+    }
+
+    await this.prisma.cartItem.update({
+      where: {
+        cartId_productId: { cartId: activeCart.id, productId }
+      },
+      data: { quantity },
+      include: { product: true }
+    })
+
+    return await this.prisma.cart.findFirstOrThrow({
+      where: { id: activeCart.id },
+      include: {
+        items: {
+          select: {
+            productId: true,
+            quantity: true,
+            product: { select: { id: true } }
+          }
+        }
+      }
+    })
   }
 
   remove(id: number) {
