@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { GoogleGenerativeAI, TaskType, type Part } from '@google/generative-ai'
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { z } from 'zod'
@@ -6,15 +6,13 @@ import { z } from 'zod'
 const answerMessageSchema = z.object({
   message: z.string(),
   action: z.discriminatedUnion('type', [
-    z.object({ type: z.literal('send_message') }),
+    z.object({ type: z.literal('TEXT') }),
     z.object({
-      type: z.literal('suggest_cart'),
+      type: z.literal('SUGGEST_CART'),
       payload: z.object({ input: z.string() })
     })
   ])
 })
-
-type AnswerMessage = z.infer<typeof answerMessageSchema>
 
 @Injectable()
 export class LlmService {
@@ -23,24 +21,24 @@ export class LlmService {
     Sua tarefa é analisar a mensagem do usuário e retornar um objeto JSON estritamente no formato definido abaixo.
     
     Ações disponíveis:
-    - 'send_message': Use essa ação para responder ao usuário com uma mensagem.
+    - 'TEXT': Use essa ação para responder ao usuário com uma mensagem.
       Use esta ação se você precisar de mais informações do usuário ou se a solicitação for apenas uma pergunta.
       No campo 'message', informe a resposta do assistente ao usuário.
-    - 'suggest_cart': Use essa ação apenas quando já tiver todas as informações necessárias para sugerir um carrinho de compras.
+    - 'SUGGEST_CART': Use essa ação apenas quando já tiver todas as informações necessárias para sugerir um carrinho de compras.
       No campo 'message', informe uma confirmação para o usuário, perguntando se ele confirma a ação de montar o carrinho de compras.
       No campo 'input' do payload, forneça uma descrição do que o usuário está solicitando, junto a uma lista de produtos que você sugeriria para o carrinho.
 
-    Exemplo de formato JSON para 'send_message':
+    Exemplo de formato JSON para 'TEXT':
     {
       "message": "Qual é a receita que você gostaria de ver?",
-      "action": { "type": "send_message" }
+      "action": { "type": "TEXT" }
     }
 
-    Exemplo de formato JSON para 'suggest_cart':
+    Exemplo de formato JSON para 'SUGGEST_CART':
     {
       "message": "Você solicitou um bolo de chocolate. Confirma a ação para que eu possa montar o carrinho de compras?",
       "action": {
-        "type": "suggest_cart",
+        "type": "SUGGEST_CART",
         "payload": {
           "input": "Bolo de chocolate. Ingredientes: farinha, açúcar, ovos, chocolate meio amargo, fermento em pó."
         }
@@ -61,7 +59,7 @@ export class LlmService {
     )
   }
 
-  answerMessage = async (message: string) => {
+  async answerMessage(message: string) {
     try {
       console.log('LlmService.answerMessage called with message:', message)
 
@@ -86,37 +84,42 @@ export class LlmService {
       const result = await chat.generateContent({
         contents: [{ role: 'user', parts: [{ text: promptWithUserMessage }] }]
       })
-      // const result = await chat.sendMessage(promptWithUserMessage)
-
-      console.log('Gemini result', JSON.stringify(result, null, 2))
 
       const responseText = result.response.text()
-      console.log('Raw Gemini response text:', responseText)
 
       if (!responseText) {
         throw new Error('Failed to get a response from Gemini.')
       }
 
-      // Tenta fazer o parse do texto como JSON
-      // Valida com Zod
       const parsedOutput = answerMessageSchema.parse(JSON.parse(responseText))
 
-      // O Gemini API não retorna um 'responseId' como o OpenAI.responses.parse.
-      // Você pode gerar um ou usar um placeholder.
-      const responseId = `gemini-response-${Date.now()}`
-
-      console.log(
-        'LlmService.answerMessage parsed output:',
-        JSON.stringify(parsedOutput, null, 2)
-      )
-
-      return {
-        ...parsedOutput,
-        responseId: responseId
-      }
+      return { ...parsedOutput, responseId: `gemini-response-${Date.now()}` }
     } catch (error) {
       console.error('Error in LlmService.answerMessage:', error)
-      // Aqui você pode decidir se quer relançar o erro ou retornar null
+      return null
+    }
+  }
+
+  async embedInput(input: string) {
+    try {
+      console.log('LlmService.embedInput called with input', input)
+
+      const content: Part = { text: input }
+
+      console.log({ content })
+
+      const result = await this.ai
+        .getGenerativeModel({ model: 'text-embedding-004' })
+        .embedContent({
+          content: { parts: [content], role: 'user' },
+          taskType: TaskType.RETRIEVAL_DOCUMENT
+        })
+
+      console.log('embedding length:', result.embedding.values.length) // 768
+
+      return result.embedding
+    } catch (error) {
+      console.error('Error in LlmService.embedInput:', error)
       return null
     }
   }
