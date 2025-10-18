@@ -1,6 +1,7 @@
-import { GoogleGenerativeAI, TaskType, type Part } from '@google/generative-ai'
+import { GoogleGenerativeAI, TaskType } from '@google/generative-ai'
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import type { Product } from 'generated/prisma'
 import { z } from 'zod'
 
 const answerMessageSchema = z.object({
@@ -52,6 +53,7 @@ export class LlmService {
   `
   private ai: GoogleGenerativeAI
   private model = 'gemini-2.5-flash'
+  private embeddingModel = 'text-embedding-004'
 
   constructor(private readonly configService: ConfigService) {
     this.ai = new GoogleGenerativeAI(
@@ -59,7 +61,7 @@ export class LlmService {
     )
   }
 
-  async answerMessage(message: string) {
+  async answerMessage(message: string, history?: string[]) {
     try {
       console.log('LlmService.answerMessage called with message:', message)
 
@@ -71,9 +73,11 @@ export class LlmService {
         }
       })
       // .startChat({
-      //   // Adicionar o histórico da conversa aqui, se aplicável, para manter o contexto.
-      //   // Por enquanto, vamos manter simples.
+      //   history:
+      //     history?.map((msg) => ({ role: 'user', parts: [{ text: msg }] })) ||
+      //     []
       // })
+      // .sendMessage({ role: 'user', parts: [{ text: message }] })
 
       const promptWithUserMessage = `
         ${LlmService.ANSWER_MESSAGE_PROMPT}
@@ -102,24 +106,35 @@ export class LlmService {
 
   async embedInput(input: string) {
     try {
-      console.log('LlmService.embedInput called with input', input)
-
-      const content: Part = { text: input }
-
-      console.log({ content })
-
+      // 768 dimensions for text-embedding-004
       const result = await this.ai
-        .getGenerativeModel({ model: 'text-embedding-004' })
+        .getGenerativeModel({ model: this.embeddingModel })
         .embedContent({
-          content: { parts: [content], role: 'user' },
+          content: { parts: [{ text: input }], role: 'user' },
           taskType: TaskType.RETRIEVAL_DOCUMENT
         })
-
-      console.log('embedding length:', result.embedding.values.length) // 768
 
       return result.embedding
     } catch (error) {
       console.error('Error in LlmService.embedInput:', error)
+      return null
+    }
+  }
+
+  async batchEmbedInputs(inputs: Product[]) {
+    try {
+      const resp = await this.ai
+        .getGenerativeModel({ model: this.embeddingModel })
+        .batchEmbedContents({
+          requests: inputs.map((input) => ({
+            content: { parts: [{ text: input.name }], role: 'user' },
+            taskType: TaskType.RETRIEVAL_DOCUMENT,
+            title: `product-${input.id}`
+          }))
+        })
+      return resp.embeddings
+    } catch (error) {
+      console.error('Error in LlmService.batchEmbedInputs:', error)
       return null
     }
   }
