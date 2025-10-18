@@ -39,6 +39,17 @@ export class ChatSessionController {
     return await this.chatSessionService.addUserMessage(+id, content)
   }
 
+  @Post(':chatSessionId/actions/:actionId/confirm')
+  async confirmAction(
+    @Param('chatSessionId') chatSessionId: string,
+    @Param('actionId') actionId: string
+  ) {
+    return await this.chatSessionService.confirmAction(
+      +chatSessionId,
+      +actionId
+    )
+  }
+
   @Patch(':id')
   update(
     @Param('id') id: string,
