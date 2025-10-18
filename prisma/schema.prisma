@@ -22,7 +22,7 @@ model Product {
   id        Int       @id @default(autoincrement())
   name      String
   price     Float
-  embedding Float[]
+  embedding Unsupported("vector(768)")? @map("embedding")
 
   storeId Int   @map("store_id")
   store   Store @relation(fields: [storeId], references: [id])

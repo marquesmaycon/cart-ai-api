@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common'
+import type { Product } from 'generated/prisma'
 import { LlmService } from 'src/llm/llm.service'
 
 import { PrismaService } from 'src/prisma/prisma.service'
@@ -16,11 +17,11 @@ export class CatalogService {
     if (this['_hasRunEmbbedingBatch']) return
     this['_hasRunEmbbedingBatch'] = true
 
-    const products = await this.prisma.product.findMany({
-      where: {
-        OR: [{ embedding: { equals: null } }, { embedding: { isEmpty: true } }]
-      }
-    })
+    const products = await this.prisma.$queryRaw<Product[]>`
+      SELECT id, name
+      FROM products
+      WHERE embedding IS NULL
+    `
 
     if (!products.length) return
 
@@ -28,11 +29,13 @@ export class CatalogService {
     if (!embeddings) return
 
     await this.prisma.$transaction(
-      embeddings.map(({ values }, index) =>
-        this.prisma.product.update({
-          where: { id: products[index].id },
-          data: { embedding: values }
-        })
+      embeddings.map(
+        ({ values }, index) =>
+          this.prisma.$executeRaw`
+          UPDATE products
+          SET embedding = ${JSON.stringify(values)}::vector
+          WHERE id = ${products[index].id}
+        `
       )
     )
   }
