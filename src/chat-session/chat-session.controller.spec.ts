@@ -97,8 +97,6 @@ describe('ChatSessionController', () => {
       ])
     )
 
-    JSON.stringify(updatedChatSession, null, 2)
-
     const assistantMsg = updatedChatSession?.messages[1]
 
     expect(assistantMsg?.actions).toEqual(

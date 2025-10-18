@@ -11,6 +11,11 @@ import { PrismaService } from 'src/prisma/prisma.service'
 import type { CreateChatMessageDto } from './dto/create-chat-message.dto'
 import { LlmService } from 'src/llm/llm.service'
 
+type RelevantsProducts = {
+  store_id: number
+  products: { id: number; name: string; similarity: number }[]
+}
+
 @Injectable()
 export class ChatSessionService {
   constructor(
@@ -85,8 +90,6 @@ export class ChatSessionService {
     }
 
     if (action.actionType === 'SUGGEST_CART') {
-      console.log('action payload', action.payload)
-
       const embedding = await this.llmService.embedInput(
         JSON.stringify(action.payload) || ''
       )
@@ -97,22 +100,21 @@ export class ChatSessionService {
 
       const stringifiedEmbedding = JSON.stringify(embedding.values)
 
-      const relevantProducts = await this.prisma.$queryRaw`
+      const relevantProducts = await this.prisma.$queryRaw<RelevantsProducts[]>`
         SELECT store_id, JSON_AGG(
           JSON_BUILD_OBJECT(
             'id', id,
             'name', name,
-            -- 'price', price
-            'similarity', embedding <=> ${stringifiedEmbedding}
+            'similarity', embedding::vector <=> ${stringifiedEmbedding}::vector
           )
         ) as products
         FROM products p
-        WHERE embedding <=> ${stringifiedEmbedding} < 0.65
+        WHERE embedding::vector <=> ${stringifiedEmbedding}::vector < 0.65
         GROUP BY store_id
         LIMIT 5;
       `
 
-      console.dir(JSON.stringify(relevantProducts, null, 2))
+      console.log(JSON.stringify(relevantProducts, null, 2))
     } else {
       throw new InternalServerErrorException('Unknown action type')
     }
