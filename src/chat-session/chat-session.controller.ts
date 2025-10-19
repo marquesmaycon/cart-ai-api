@@ -1,24 +1,15 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete
-} from '@nestjs/common'
+import { Controller, Get, Post, Body, Param } from '@nestjs/common'
 
 import { ChatSessionService } from './chat-session.service'
-import { CreateChatSessionDto } from './dto/create-chat-session.dto'
-import { UpdateChatSessionDto } from './dto/update-chat-session.dto'
 
-@Controller('chat-session')
+@Controller('chat-sessions')
 export class ChatSessionController {
   constructor(private readonly chatSessionService: ChatSessionService) {}
 
   @Post()
-  create(@Body() createChatSessionDto: CreateChatSessionDto) {
-    return this.chatSessionService.create(createChatSessionDto)
+  create() {
+    const userId = 1
+    return this.chatSessionService.create({ userId })
   }
 
   @Get()
@@ -48,18 +39,5 @@ export class ChatSessionController {
       +chatSessionId,
       +actionId
     )
-  }
-
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateChatSessionDto: UpdateChatSessionDto
-  ) {
-    return this.chatSessionService.update(+id, updateChatSessionDto)
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.chatSessionService.remove(+id)
   }
 }

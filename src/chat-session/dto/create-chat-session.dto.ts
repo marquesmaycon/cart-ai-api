@@ -1,3 +1,3 @@
 export class CreateChatSessionDto {
-  userId: number
+  userId: number = 1
 }

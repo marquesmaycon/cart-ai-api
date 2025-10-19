@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common'
 
 import { CreateChatSessionDto } from './dto/create-chat-session.dto'
-import { UpdateChatSessionDto } from './dto/update-chat-session.dto'
 import { PrismaService } from 'src/prisma/prisma.service'
 import type { CreateChatMessageDto } from './dto/create-chat-message.dto'
 import { LlmService } from 'src/llm/llm.service'
@@ -24,14 +23,16 @@ export class ChatSessionService {
     private llmService: LlmService
   ) {}
 
-  async create({ userId }: CreateChatSessionDto) {
+  async create({ userId = 1 }: CreateChatSessionDto) {
     return await this.prisma.chatSession.create({
       data: { userId }
     })
   }
 
-  findAll() {
-    return `This action returns all chatSession`
+  async findAll() {
+    return await this.prisma.chatSession.findMany({
+      where: { userId: 1 }
+    })
   }
 
   async findOne(id: number) {
@@ -41,11 +42,19 @@ export class ChatSessionService {
         messages: {
           include: {
             actions: true,
-            cart: {
+            carts: {
               select: {
+                id: true,
                 score: true,
                 storeId: true,
-                store: { select: { name: true } }
+                store: { select: { name: true } },
+                items: {
+                  include: {
+                    product: {
+                      select: { price: true }
+                    }
+                  }
+                }
               }
             }
           },
@@ -195,13 +204,5 @@ export class ChatSessionService {
         })
       })
     )
-  }
-
-  update(id: number, updateChatSessionDto: UpdateChatSessionDto) {
-    return `This action updates a #${id} chatSession`
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} chatSession`
   }
 }

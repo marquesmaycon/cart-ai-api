@@ -132,6 +132,11 @@ export class CartService {
       data: { active: false }
     })
 
+    await this.prisma.cart.update({
+      where: { id: cartId },
+      data: { active: true }
+    })
+
     return cart
   }
 

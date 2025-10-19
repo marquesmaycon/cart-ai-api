@@ -109,7 +109,7 @@ model ChatMessage {
   chatSessionId Int                 @map("chat_session_id")
   chatSession   ChatSession         @relation(fields: [chatSessionId], references: [id], onDelete: Cascade)
   actions       ChatMessageAction[]
-  cart          Cart[]
+  carts          Cart[]
 
   @@map("chat_messages")
 }
