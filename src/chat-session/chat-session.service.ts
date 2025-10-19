@@ -10,8 +10,9 @@ import { UpdateChatSessionDto } from './dto/update-chat-session.dto'
 import { PrismaService } from 'src/prisma/prisma.service'
 import type { CreateChatMessageDto } from './dto/create-chat-message.dto'
 import { LlmService } from 'src/llm/llm.service'
+import type { SuggestedCartsSchema } from 'src/llm/schemas'
 
-type RelevantsProducts = {
+export type RelevantsProducts = {
   store_id: number
   products: { id: number; name: string; similarity: number }[]
 }
@@ -89,10 +90,15 @@ export class ChatSessionService {
       throw new ConflictException('Action already confirmed')
     }
 
+    await this.prisma.chatMessageAction.update({
+      where: { id: actionId },
+      data: { confirmedAt: new Date() }
+    })
+
     if (action.actionType === 'SUGGEST_CART') {
-      const embedding = await this.llmService.embedInput(
-        JSON.stringify(action.payload) || ''
-      )
+      const actionPayload = JSON.stringify(action.payload)
+
+      const embedding = await this.llmService.embedInput(actionPayload)
 
       if (!embedding) {
         throw new BadGatewayException('Failed to generate embedding')
@@ -114,10 +120,67 @@ export class ChatSessionService {
         LIMIT 5;
       `
 
-      console.log(JSON.stringify(relevantProducts, null, 2))
+      const llmResponse = await this.llmService.suggestCarts(
+        relevantProducts,
+        actionPayload
+      )
+
+      if (!llmResponse) {
+        throw new BadGatewayException(
+          'Failed to get a response from LLM service'
+        )
+      }
+
+      await this.prisma.chatMessageAction.update({
+        where: { id: actionId },
+        data: { executedAt: new Date() }
+      })
+
+      const chatMessage = await this.addMessageToSession({
+        chatSessionId: chatSession.id,
+        content: llmResponse.response,
+        sender: 'ASSISTANT',
+        messageType: 'SUGGESTION',
+        geminiMessageId: llmResponse.responseId
+      })
+
+      await this.saveSuggestedCarts(String(chatMessage.id), llmResponse)
     } else {
       throw new InternalServerErrorException('Unknown action type')
     }
+  }
+
+  private async saveSuggestedCarts(
+    messageId: string,
+    suggestion: SuggestedCartsSchema
+  ) {
+    const user = await this.prisma.user.findFirstOrThrow({
+      where: {
+        chatSessions: { some: { messages: { some: { id: +messageId } } } }
+      }
+    })
+
+    await this.prisma.$transaction(
+      suggestion.carts.map(({ store_id: storeId, score, products }) => {
+        return this.prisma.cart.create({
+          data: {
+            userId: user.id,
+            storeId,
+            active: false,
+            score,
+            suggestedByMessageId: +messageId,
+            items: {
+              createMany: {
+                data: products.map(({ id, quantity }) => ({
+                  productId: id,
+                  quantity
+                }))
+              }
+            }
+          }
+        })
+      })
+    )
   }
 
   update(id: number, updateChatSessionDto: UpdateChatSessionDto) {

@@ -19,7 +19,7 @@ model Store {
 }
 
 model Product {
-  id        Int       @id @default(autoincrement())
+  id        Int                         @id @default(autoincrement())
   name      String
   price     Float
   embedding Unsupported("vector(768)")? @map("embedding")
@@ -48,12 +48,15 @@ model User {
 model Cart {
   id        Int      @id @default(autoincrement())
   active    Boolean  @default(true)
+  score     Int?
   createdAt DateTime @default(now()) @map("created_at")
 
-  userId  Int   @map("user_id")
-  user    User  @relation(fields: [userId], references: [id])
-  storeId Int   @map("store_id")
-  store   Store @relation(fields: [storeId], references: [id])
+  suggestedByMessageId Int?         @map("suggested_by_message_id")
+  message              ChatMessage? @relation(fields: [suggestedByMessageId], references: [id], onDelete: Cascade)
+  userId               Int          @map("user_id")
+  user                 User         @relation(fields: [userId], references: [id])
+  storeId              Int          @map("store_id")
+  store                Store        @relation(fields: [storeId], references: [id])
 
   items CartItem[]
 
@@ -106,6 +109,7 @@ model ChatMessage {
   chatSessionId Int                 @map("chat_session_id")
   chatSession   ChatSession         @relation(fields: [chatSessionId], references: [id], onDelete: Cascade)
   actions       ChatMessageAction[]
+  cart          Cart[]
 
   @@map("chat_messages")
 }
