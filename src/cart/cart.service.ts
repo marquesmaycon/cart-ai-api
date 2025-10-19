@@ -122,6 +122,19 @@ export class CartService {
     })
   }
 
+  async chooseCart(cartId: number) {
+    const cart = await this.prisma.cart.findUniqueOrThrow({
+      where: { id: cartId }
+    })
+
+    await this.prisma.cart.updateMany({
+      where: { userId: cart.userId, active: true },
+      data: { active: false }
+    })
+
+    return cart
+  }
+
   remove(id: number) {
     return `This action removes a #${id} cart`
   }
