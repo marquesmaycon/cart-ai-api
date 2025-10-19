@@ -37,7 +37,21 @@ export class ChatSessionService {
   async findOne(id: number) {
     return await this.prisma.chatSession.findUnique({
       where: { id },
-      include: { messages: { include: { actions: true } } }
+      include: {
+        messages: {
+          include: {
+            actions: true,
+            cart: {
+              select: {
+                score: true,
+                storeId: true,
+                store: { select: { name: true } }
+              }
+            }
+          },
+          orderBy: { createdAt: 'asc' }
+        }
+      }
     })
   }
 

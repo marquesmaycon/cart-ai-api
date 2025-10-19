@@ -57,8 +57,6 @@ describe('ChatSessionController', () => {
       messageContent
     )
 
-    console.log(JSON.stringify(updatedChatSession, null, 2))
-
     expect(updatedChatSession?.messages).toEqual(
       expect.arrayContaining<Partial<ChatMessage>>([
         expect.objectContaining({
@@ -72,14 +70,14 @@ describe('ChatSessionController', () => {
     )
   }, 10000)
 
-  it('should return an ai action to a message', async () => {
+  it('should add new messages to chat session with action', async () => {
     const userId = 1
     const chatSession = await controller.create({ userId })
 
     expect(chatSession).toHaveProperty('id')
     expect(chatSession).toHaveProperty('userId', userId)
 
-    const content = 'Gostaria de fazer um bolo de chocolate'
+    const content = 'Gostaria de fazer uma feijoada vegana'
     const updatedChatSession = await controller.addUserMessage(
       String(chatSession.id),
       content
@@ -109,5 +107,10 @@ describe('ChatSessionController', () => {
       String(chatSession.id),
       String(assistantMsg?.actions?.[0]?.id)
     )
-  }, 10000)
+
+    const chat = await controller.findOne(String(chatSession.id))
+
+    expect(chat?.messages).toHaveLength(3)
+    expect(chat?.messages[2]).toHaveProperty('sender', MessageSender.ASSISTANT)
+  }, 40000)
 })
